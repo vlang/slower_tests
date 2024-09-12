@@ -9,8 +9,8 @@ in this discussion: <https://github.com/vlang/v/pull/22187> .
 The CI of the main V repo, will use this separate repository, by running the
 following task on each commit and PR:
 ```sh
-git clone https://github.com/vlang/hash_validation_tests
-v test hash_validation_tests
+git clone https://github.com/vlang/slower_tests
+v test slower_tests
 ```
 
 In other words, all tests here will be run, no matter in what folder
