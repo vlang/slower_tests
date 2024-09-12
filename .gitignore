@@ -1,0 +1,51 @@
+# ignore editor files
+.idea/
+*.iml
+.project
+.classpath
+.c9
+.vs
+*.launch
+.settings/
+*.sublime-workspace
+.vscode/
+*.code-workspace
+*~
+*.swp
+*.swo
+*.swn
+.env
+
+# ignore debugger files
+cachegrind.out.*
+.gdb_history
+*.dSYM
+*.def
+vgcore.*
+
+# ignore system files
+.DS_Store
+._*
+thumbs.db
+/.symlink
+/.bin
+_docs
+
+# ignore vs databases
+*.suo
+*.VC.db
+*.rsp
+
+# ignore codespace env
+.venv/
+.direnv/
+shell.nix
+default.nix
+flake.nix
+.envrc
+
+# ignore VLS log
+vls.log
+
+# ignore v2go tmperror files
+*.tmperr
