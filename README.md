@@ -1,4 +1,4 @@
-This folder contains more tests for V's `crypto` related modules.
+This repository contains more tests for V's `crypto` related modules.
 
 These tests are more extensive, but also a lot bigger and a lot slower,
 than the ones in vlib/crypto. 
