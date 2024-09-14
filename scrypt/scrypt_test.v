@@ -1,7 +1,6 @@
 // The scrypt test vectors are taken from
 // [RFC7914](https://datatracker.ietf.org/doc/html/rfc7914#section-12)
 // section 12.
-import crypto.sha256
 import crypto.scrypt
 
 struct ScryptTestData {
