@@ -353,7 +353,7 @@ const smallloworderpk_zeroshared = [
 		pvkey:           hex.decode('88227494038f2bb811d47805bcdf04a2ac585ada7f2f23389bfd4658f9ddd45e')!
 		pbkey:           hex.decode('0000000000000000000000000000000000000000000000000000000000000000')!
 		expected_shared: hex.decode('0000000000000000000000000000000000000000000000000000000000000000')!
-		err:             error('bad input point: low order point')
+		err:             error('x25519: unallowed zeros/scalar point')
 	},
 	SmallLowOrderPKZeros{
 		title:           '# public key = 1'
