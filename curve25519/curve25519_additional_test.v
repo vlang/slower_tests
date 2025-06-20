@@ -348,17 +348,19 @@ mut:
 
 const smallloworderpk_zeroshared = [
 	SmallLowOrderPKZeros{
-		title:           '# public key = 0'
-		status:          '# acceptable: SmallPublicKey, LowOrderPublic, ZeroSharedSecret'
-		pvkey:           hex.decode('88227494038f2bb811d47805bcdf04a2ac585ada7f2f23389bfd4658f9ddd45e')!
+		title:  '# public key = 0'
+		status: '# acceptable: SmallPublicKey, LowOrderPublic, ZeroSharedSecret'
+		pvkey:  hex.decode('88227494038f2bb811d47805bcdf04a2ac585ada7f2f23389bfd4658f9ddd45e')!
+		// this zeros public key was early rejected on latest module updates
 		pbkey:           hex.decode('0000000000000000000000000000000000000000000000000000000000000000')!
 		expected_shared: hex.decode('0000000000000000000000000000000000000000000000000000000000000000')!
-		err:             error('bad input point: low order point')
+		err:             error('x25519: unallowed zeros/scalar point')
 	},
 	SmallLowOrderPKZeros{
-		title:           '# public key = 1'
-		status:          '# acceptable: SmallPublicKey, LowOrderPublic, ZeroSharedSecret'
-		pvkey:           hex.decode('48232e8972b61c7e61930eb9450b5070eae1c670475685541f0476217e48184f')!
+		title:  '# public key = 1'
+		status: '# acceptable: SmallPublicKey, LowOrderPublic, ZeroSharedSecret'
+		pvkey:  hex.decode('48232e8972b61c7e61930eb9450b5070eae1c670475685541f0476217e48184f')!
+		// TODO: should this ones be rejected ?
 		pbkey:           hex.decode('0100000000000000000000000000000000000000000000000000000000000000')!
 		expected_shared: hex.decode('0000000000000000000000000000000000000000000000000000000000000000')!
 		err:             error('bad input point: low order point')
