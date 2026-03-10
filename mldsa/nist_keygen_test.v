@@ -1,9 +1,8 @@
-module mldsa
-
 // NIST ACVP keygen test vectors (FIPS 204).
 import encoding.hex
 import json
 import os
+import x.crypto.mldsa { Kind, PrivateKey }
 
 struct KeyGenTest {
 	tc_id int @[json: 'tcId']

@@ -1,5 +1,3 @@
-module mldsa
-
 // NIST ACVP siggen test vectors (FIPS 204).
 // groups: 1,3,5 deterministic external pure; 2,4,6 deterministic preHash;
 // 7,9,11 deterministic internal mu; 8,10,12 deterministic internal msg;
@@ -9,6 +7,7 @@ import encoding.hex
 import json
 import os
 import crypto.sha3
+import x.crypto.mldsa { Kind, PreHash, PrivateKey }
 
 struct SigGenTest {
 	tc_id    int    @[json: 'tcId']
@@ -115,6 +114,10 @@ fn run_siggen_groups(prompt SigGenPrompt, results map[int]string, filter fn (Sig
 	assert total > 0, 'no ${label} siggen tests were run'
 }
 
+fn zeros_32() []u8 {
+	return []u8{len: 32}
+}
+
 fn test_nist_acvp_siggen_deterministic_external_pure() {
 	prompt, results := load_siggen_vectors() or { panic(err) }
 
@@ -123,8 +126,8 @@ fn test_nist_acvp_siggen_deterministic_external_pure() {
 	}, fn (sk &PrivateKey, t SigGenTest, g SigGenGroup) ![]u8 {
 		msg_bytes := hex.decode(t.msg)!
 		ctx_bytes := hex.decode(t.context)!
-		mu := compute_mu(sk.pk.tr[..], msg_bytes, ctx_bytes.bytestr())
-		return sign_internal(sk, mu, [32]u8{})
+		mu := mldsa.compute_mu(sk.public_key().tr(), msg_bytes, ctx_bytes.bytestr())
+		return sk.sign_mu(mu[..], zeros_32())
 	}, 'deterministic-external-pure')
 }
 
@@ -135,8 +138,8 @@ fn test_nist_acvp_siggen_deterministic_internal_mu() {
 		return g.deterministic && g.signature_interface == 'internal' && g.tests.len > 0
 			&& g.tests[0].mu != ''
 	}, fn (sk &PrivateKey, t SigGenTest, g SigGenGroup) ![]u8 {
-		mu := slice_to_64(hex.decode(t.mu)!)
-		return sign_internal(sk, mu, [32]u8{})
+		mu := hex.decode(t.mu)!
+		return sk.sign_mu(mu, zeros_32())
 	}, 'deterministic-internal-mu')
 }
 
@@ -149,10 +152,10 @@ fn test_nist_acvp_siggen_deterministic_internal_msg() {
 	}, fn (sk &PrivateKey, t SigGenTest, g SigGenGroup) ![]u8 {
 		msg_bytes := hex.decode(t.msg)!
 		mut h_mu := sha3.new_shake256()
-		h_mu.write(sk.pk.tr[..])
+		h_mu.write(sk.public_key().tr())
 		h_mu.write(msg_bytes)
-		mu := slice_to_64(h_mu.read(64))
-		return sign_internal(sk, mu, [32]u8{})
+		mu := h_mu.read(64)
+		return sk.sign_mu(mu, zeros_32())
 	}, 'deterministic-internal-msg')
 }
 
@@ -164,9 +167,9 @@ fn test_nist_acvp_siggen_nondeterministic_external_pure() {
 	}, fn (sk &PrivateKey, t SigGenTest, g SigGenGroup) ![]u8 {
 		msg_bytes := hex.decode(t.msg)!
 		ctx_bytes := hex.decode(t.context)!
-		rnd := slice_to_32(hex.decode(t.rnd)!)
-		mu := compute_mu(sk.pk.tr[..], msg_bytes, ctx_bytes.bytestr())
-		return sign_internal(sk, mu, rnd)
+		rnd := hex.decode(t.rnd)!
+		mu := mldsa.compute_mu(sk.public_key().tr(), msg_bytes, ctx_bytes.bytestr())
+		return sk.sign_mu(mu[..], rnd)
 	}, 'nondeterministic-external-pure')
 }
 
@@ -177,9 +180,9 @@ fn test_nist_acvp_siggen_nondeterministic_internal_mu() {
 		return !g.deterministic && g.signature_interface == 'internal' && g.tests.len > 0
 			&& g.tests[0].mu != ''
 	}, fn (sk &PrivateKey, t SigGenTest, g SigGenGroup) ![]u8 {
-		mu := slice_to_64(hex.decode(t.mu)!)
-		rnd := slice_to_32(hex.decode(t.rnd)!)
-		return sign_internal(sk, mu, rnd)
+		mu := hex.decode(t.mu)!
+		rnd := hex.decode(t.rnd)!
+		return sk.sign_mu(mu, rnd)
 	}, 'nondeterministic-internal-mu')
 }
 
@@ -191,12 +194,12 @@ fn test_nist_acvp_siggen_nondeterministic_internal_msg() {
 			&& g.tests[0].mu == ''
 	}, fn (sk &PrivateKey, t SigGenTest, g SigGenGroup) ![]u8 {
 		msg_bytes := hex.decode(t.msg)!
-		rnd := slice_to_32(hex.decode(t.rnd)!)
+		rnd := hex.decode(t.rnd)!
 		mut h_mu := sha3.new_shake256()
-		h_mu.write(sk.pk.tr[..])
+		h_mu.write(sk.public_key().tr())
 		h_mu.write(msg_bytes)
-		mu := slice_to_64(h_mu.read(64))
-		return sign_internal(sk, mu, rnd)
+		mu := h_mu.read(64)
+		return sk.sign_mu(mu, rnd)
 	}, 'nondeterministic-internal-msg')
 }
 
@@ -209,8 +212,8 @@ fn test_nist_acvp_siggen_deterministic_prehash() {
 		msg_bytes := hex.decode(t.msg)!
 		ctx_bytes := hex.decode(t.context)!
 		ph := nist_prehash(t.hash_alg)
-		mu := compute_mu_prehash(sk.pk.tr[..], msg_bytes, ctx_bytes.bytestr(), ph)
-		return sign_internal(sk, mu, [32]u8{})
+		mu := mldsa.compute_mu_prehash(sk.public_key().tr(), msg_bytes, ctx_bytes.bytestr(), ph)
+		return sk.sign_mu(mu[..], zeros_32())
 	}, 'deterministic-prehash')
 }
 
@@ -222,9 +225,9 @@ fn test_nist_acvp_siggen_nondeterministic_prehash() {
 	}, fn (sk &PrivateKey, t SigGenTest, g SigGenGroup) ![]u8 {
 		msg_bytes := hex.decode(t.msg)!
 		ctx_bytes := hex.decode(t.context)!
-		rnd := slice_to_32(hex.decode(t.rnd)!)
+		rnd := hex.decode(t.rnd)!
 		ph := nist_prehash(t.hash_alg)
-		mu := compute_mu_prehash(sk.pk.tr[..], msg_bytes, ctx_bytes.bytestr(), ph)
-		return sign_internal(sk, mu, rnd)
+		mu := mldsa.compute_mu_prehash(sk.public_key().tr(), msg_bytes, ctx_bytes.bytestr(), ph)
+		return sk.sign_mu(mu[..], rnd)
 	}, 'nondeterministic-prehash')
 }

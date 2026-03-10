@@ -1,9 +1,8 @@
-module mldsa
-
 // Wycheproof ML-DSA verification test vectors from C2SP/wycheproof.
 import encoding.hex
 import json
 import os
+import x.crypto.mldsa { Kind, PublicKey }
 
 struct WpTestCase {
 	tc_id   int      @[json: 'tcId']

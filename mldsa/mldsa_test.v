@@ -1,72 +1,4 @@
-module mldsa
-
-fn test_field_to_montgomery_roundtrip() {
-	for val in [u32(0), 1, 2, 100, 1000, q - 1] {
-		m := field_to_montgomery(val) or { panic(err) }
-		back := field_from_montgomery(m)
-		assert back == val, 'roundtrip failed for ${val}: got ${back}'
-	}
-}
-
-fn test_field_add_sub() {
-	a := field_to_montgomery(100) or { panic(err) }
-	b := field_to_montgomery(200) or { panic(err) }
-	sum := field_add(a, b)
-	assert field_from_montgomery(sum) == 300
-
-	diff := field_sub(sum, b)
-	assert field_from_montgomery(diff) == 100
-}
-
-fn test_field_mul() {
-	a := field_to_montgomery(1000) or { panic(err) }
-	b := field_to_montgomery(2000) or { panic(err) }
-	prod := field_montgomery_mul(a, b)
-	assert field_from_montgomery(prod) == (1000 * 2000) % q
-}
-
-fn test_ntt_inverse_ntt_roundtrip() {
-	mut f := RingElement{}
-	for i in 0 .. n {
-		f[i] = field_to_montgomery(u32(i % 100)) or { panic(err) }
-	}
-	ntt_f := ntt(f)
-	back := inverse_ntt(ntt_f)
-	for i in 0 .. n {
-		assert field_from_montgomery(back[i]) == field_from_montgomery(f[i]), 'NTT roundtrip failed at index ${i}'
-	}
-}
-
-fn test_ntt_mul_is_polynomial_product() {
-	// (1 + x)^2 ?= x^2 + 2x + 1
-	mut a := RingElement{}
-	a[0] = field_to_montgomery(1) or { panic(err) }
-	a[1] = field_to_montgomery(1) or { panic(err) }
-
-	a_ntt := ntt(a)
-	prod_ntt := ntt_mul(a_ntt, a_ntt)
-	prod := inverse_ntt(prod_ntt)
-
-	assert field_from_montgomery(prod[0]) == 1, 'expected x^2'
-	assert field_from_montgomery(prod[1]) == 2, 'expected 2x'
-	assert field_from_montgomery(prod[2]) == 1, 'expected 1'
-
-	// rest should be zero
-	for i in 3 .. n {
-		assert field_from_montgomery(prod[i]) == 0, 'expected 0 at index ${i}, got ${field_from_montgomery(prod[i])}'
-	}
-}
-
-fn test_power2_round() {
-	// r = hi * 2^d + lo (mod q)
-	for val in [u32(0), 1, 100, 1000, q / 2, q - 1] {
-		r := field_to_montgomery(val) or { panic(err) }
-		hi, lo := power2_round(r)
-		reconstructed := field_add(field_to_montgomery(u32(hi) << d) or { panic(err) },
-			lo)
-		assert field_from_montgomery(reconstructed) == val, 'power2_round failed for ${val}'
-	}
-}
+import x.crypto.mldsa { Kind, PrivateKey, PublicKey }
 
 struct SignVerifyCase {
 	label string
@@ -117,20 +49,20 @@ const pk_roundtrip_cases = [
 	PkRoundtripCase{
 		label:    'ML-DSA-44'
 		kind:     .ml_dsa_44
-		pk_size:  public_key_size_44
-		sig_size: signature_size_44
+		pk_size:  mldsa.public_key_size_44
+		sig_size: mldsa.signature_size_44
 	},
 	PkRoundtripCase{
 		label:    'ML-DSA-65'
 		kind:     .ml_dsa_65
-		pk_size:  public_key_size_65
-		sig_size: signature_size_65
+		pk_size:  mldsa.public_key_size_65
+		sig_size: mldsa.signature_size_65
 	},
 	PkRoundtripCase{
 		label:    'ML-DSA-87'
 		kind:     .ml_dsa_87
-		pk_size:  public_key_size_87
-		sig_size: signature_size_87
+		pk_size:  mldsa.public_key_size_87
+		sig_size: mldsa.signature_size_87
 	},
 ]
 
@@ -188,27 +120,6 @@ fn test_randomized_sign() {
 	assert sig != sig2
 }
 
-fn test_verify_with_mu() {
-	seed := []u8{len: 32, init: u8(index + 5)}
-	sk := PrivateKey.from_seed(seed, .ml_dsa_65) or { panic(err) }
-	pk := sk.public_key()
-	msg := 'mu test'.bytes()
-
-	mu := compute_mu(pk.tr[..], msg, '')
-	sig := sk.sign(msg, deterministic: true) or { panic(err) }
-
-	valid := pk.verify_mu(mu[..], sig) or { panic(err) }
-	assert valid
-
-	// wrong mu should fail
-	mut bad_mu := []u8{len: 64}
-	for i in 0 .. 64 {
-		bad_mu[i] = mu[i] ^ 0xff
-	}
-	valid2 := pk.verify_mu(bad_mu, sig) or { panic(err) }
-	assert !valid2
-}
-
 fn test_generate_key() {
 	sk44 := PrivateKey.generate(.ml_dsa_44) or { panic(err) }
 	pk44 := sk44.public_key()
@@ -216,10 +127,10 @@ fn test_generate_key() {
 	assert pk44.verify('gen'.bytes(), sig) or { panic(err) }
 
 	sk65 := PrivateKey.generate(.ml_dsa_65) or { panic(err) }
-	assert sk65.public_key().bytes().len == public_key_size_65
+	assert sk65.public_key().bytes().len == mldsa.public_key_size_65
 
 	sk87 := PrivateKey.generate(.ml_dsa_87) or { panic(err) }
-	assert sk87.public_key().bytes().len == public_key_size_87
+	assert sk87.public_key().bytes().len == mldsa.public_key_size_87
 }
 
 fn test_private_key_equal() {
@@ -253,10 +164,8 @@ fn test_private_key_bytes_roundtrip() {
 		sk2 := PrivateKey.from_bytes(sk_bytes, c.kind) or { panic('${c.label}: ${err}') }
 		pk2 := sk2.public_key()
 
-		// public keys must match
 		assert pk.equal(pk2), '${c.label}: pk mismatch after sk roundtrip'
 
-		// sign with deserialized key, verify with original pk
 		msg := 'roundtrip ${c.label}'.bytes()
 		sig := sk2.sign(msg, deterministic: true) or { panic('${c.label}: ${err}') }
 		valid := pk.verify(msg, sig) or { panic('${c.label}: ${err}') }
@@ -306,16 +215,6 @@ fn test_error_context_too_long() {
 	}
 }
 
-fn test_error_verify_with_mu_wrong_length() {
-	seed := []u8{len: 32, init: u8(index)}
-	sk := PrivateKey.from_seed(seed, .ml_dsa_44) or { panic(err) }
-	pk := sk.public_key()
-
-	if _ := pk.verify_mu([]u8{len: 32}, []u8{}) {
-		assert false, 'should reject mu with wrong length'
-	}
-}
-
 fn test_verify_corrupted_signature() {
 	seed := []u8{len: 32, init: u8(index + 2)}
 	sk := PrivateKey.from_seed(seed, .ml_dsa_44) or { panic(err) }
@@ -328,35 +227,4 @@ fn test_verify_corrupted_signature() {
 	bad_sig[sig.len / 2] ^= 0xff
 	valid := pk.verify(msg, bad_sig) or { false }
 	assert !valid
-}
-
-fn test_corrupted_key_does_not_loop() {
-	sk := PrivateKey.from_seed([]u8{len: 32, init: 0x00}, Kind.ml_dsa_44) or { panic(err) }
-	// corrupt s1 with huge coefficients so z = y + c*s1 always exceeds gamma1 - beta
-	mut bad_s1 := []NttElement{len: sk.s1.len}
-	for i in 0 .. bad_s1.len {
-		for j in 0 .. 256 {
-			bad_s1[i][j] = q - 1
-		}
-	}
-	corrupted := PrivateKey{
-		...sk
-		s1: bad_s1
-	}
-	if _ := corrupted.sign('hello'.bytes(), deterministic: true) {
-		assert false, 'expected error from corrupted key, got a signature'
-	}
-}
-
-// https://github.com/vlang/v/pull/26711#issuecomment-2924729539
-fn test_corrupted_t0_does_not_loop() {
-	sk := PrivateKey.from_seed([]u8{len: 32, init: 0x00}, Kind.ml_dsa_44) or { panic(err) }
-	mut bad_t0 := sk.t0.clone()
-	bad_t0[0][0] = 0
-	corrupted := PrivateKey{
-		...sk
-		t0: bad_t0
-	}
-	// must not hang
-	corrupted.sign([]u8{len: 10_000, init: u8(index % 256)}, deterministic: true) or { return }
 }

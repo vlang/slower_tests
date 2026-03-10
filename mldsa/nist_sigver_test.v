@@ -1,11 +1,10 @@
-module mldsa
-
 // NIST ACVP sigver test vectors (FIPS 204).
 // groups: 1,3,5 external pure; 2,4,6 preHash; 7,9,11 internal mu; 8,10,12 internal msg.
 import encoding.hex
 import json
 import os
 import crypto.sha3
+import x.crypto.mldsa { Kind, PreHash, PublicKey }
 
 struct SigVerTest {
 	tc_id     int @[json: 'tcId']
@@ -149,7 +148,7 @@ fn test_nist_acvp_sigver_internal_msg() {
 		msg_bytes := hex.decode(t.msg)!
 		sig_bytes := hex.decode(t.signature)!
 		mut h_mu := sha3.new_shake256()
-		h_mu.write(pub_key.tr[..])
+		h_mu.write(pub_key.tr())
 		h_mu.write(msg_bytes)
 		mu_bytes := h_mu.read(64)
 		return pub_key.verify_mu(mu_bytes, sig_bytes)

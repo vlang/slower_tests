@@ -1,7 +1,6 @@
-module mldsa
-
 import term
 import x.benchmark
+import x.crypto.mldsa { Kind, PrivateKey, PublicKey, SignerOpts }
 
 fn bench_header(name string) {
 	println('\n' + term.bold(name))
