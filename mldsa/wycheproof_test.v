@@ -1,11 +1,11 @@
 // Wycheproof ML-DSA verification test vectors from C2SP/wycheproof.
 import encoding.hex
-import json
+import json2
 import os
 import x.crypto.mldsa { Kind, PublicKey }
 
 struct WpTestCase {
-	tc_id   int      @[json: 'tcId']
+	tc_id   int @[json: 'tcId']
 	comment string
 	msg     string
 	ctx     string
@@ -15,21 +15,21 @@ struct WpTestCase {
 }
 
 struct WpTestGroup {
-	type_      string       @[json: 'type']
-	public_key string       @[json: 'publicKey']
+	type_      string @[json: 'type']
+	public_key string @[json: 'publicKey']
 	tests      []WpTestCase
 }
 
 struct WpTestFile {
 	algorithm       string
-	number_of_tests int          @[json: 'numberOfTests']
+	number_of_tests int           @[json: 'numberOfTests']
 	test_groups     []WpTestGroup @[json: 'testGroups']
 }
 
 fn load_wycheproof(filename string) !WpTestFile {
 	dir := os.dir(@FILE)
 	raw := os.read_file(os.join_path(dir, 'testdata', 'wycheproof', filename))!
-	return json.decode(WpTestFile, raw)
+	return json2.decode[WpTestFile](raw)
 }
 
 fn run_wycheproof(filename string, kind Kind) ! {

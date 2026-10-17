@@ -1,7 +1,7 @@
 // NIST ACVP sigver test vectors (FIPS 204).
 // groups: 1,3,5 external pure; 2,4,6 preHash; 7,9,11 internal mu; 8,10,12 internal msg.
 import encoding.hex
-import json
+import json2
 import os
 import crypto.sha3
 import x.crypto.mldsa { Kind, PreHash, PublicKey }
@@ -46,8 +46,8 @@ fn load_sigver_vectors() !(SigVerPrompt, map[int]bool) {
 	dir := os.dir(@FILE)
 	prompt_raw := os.read_file(os.join_path(dir, 'testdata', 'sigver_prompt.json'))!
 	expected_raw := os.read_file(os.join_path(dir, 'testdata', 'sigver_expected.json'))!
-	prompt := json.decode(SigVerPrompt, prompt_raw)!
-	expected := json.decode(SigVerExpected, expected_raw)!
+	prompt := json2.decode[SigVerPrompt](prompt_raw)!
+	expected := json2.decode[SigVerExpected](expected_raw)!
 
 	mut results := map[int]bool{}
 	for g in expected.test_groups {

@@ -4,7 +4,7 @@
 // 13,15,17 non-deterministic external pure; 14,16,18 non-deterministic preHash;
 // 19,21,23 non-deterministic internal mu; 20,22,24 non-deterministic internal msg.
 import encoding.hex
-import json
+import json2
 import os
 import crypto.sha3
 import x.crypto.mldsa { Kind, PreHash, PrivateKey }
@@ -50,8 +50,8 @@ fn load_siggen_vectors() !(SigGenPrompt, map[int]string) {
 	dir := os.dir(@FILE)
 	prompt_raw := os.read_file(os.join_path(dir, 'testdata', 'siggen_prompt.json'))!
 	expected_raw := os.read_file(os.join_path(dir, 'testdata', 'siggen_expected.json'))!
-	prompt := json.decode(SigGenPrompt, prompt_raw)!
-	expected := json.decode(SigGenExpected, expected_raw)!
+	prompt := json2.decode[SigGenPrompt](prompt_raw)!
+	expected := json2.decode[SigGenExpected](expected_raw)!
 
 	mut results := map[int]string{}
 	for g in expected.test_groups {
