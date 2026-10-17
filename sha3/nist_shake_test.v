@@ -4,7 +4,7 @@
 
 // only byte-aligned messages (len % 8 == 0) are tested
 import encoding.hex
-import json
+import json2
 import os
 import crypto.sha3
 
@@ -45,8 +45,8 @@ fn load_shake_vectors(name string) !(ShakePrompt, map[int]ShakeResult) {
 	dir := os.dir(@FILE)
 	prompt_raw := os.read_file(os.join_path(dir, 'testdata', '${name}_prompt.json'))!
 	expected_raw := os.read_file(os.join_path(dir, 'testdata', '${name}_expected.json'))!
-	prompt := json.decode(ShakePrompt, prompt_raw)!
-	expected := json.decode(ShakeExpected, expected_raw)!
+	prompt := json2.decode[ShakePrompt](prompt_raw)!
+	expected := json2.decode[ShakeExpected](expected_raw)!
 
 	mut results := map[int]ShakeResult{}
 	for g in expected.test_groups {

@@ -1,6 +1,6 @@
 // NIST ACVP keygen test vectors (FIPS 204).
 import encoding.hex
-import json
+import json2
 import os
 import x.crypto.mldsa { Kind, PrivateKey }
 
@@ -38,8 +38,8 @@ fn load_keygen_vectors() !(KeyGenPrompt, KeyGenExpected) {
 	dir := os.dir(@FILE)
 	prompt_raw := os.read_file(os.join_path(dir, 'testdata', 'keygen_prompt.json'))!
 	expected_raw := os.read_file(os.join_path(dir, 'testdata', 'keygen_expected.json'))!
-	prompt := json.decode(KeyGenPrompt, prompt_raw)!
-	expected := json.decode(KeyGenExpected, expected_raw)!
+	prompt := json2.decode[KeyGenPrompt](prompt_raw)!
+	expected := json2.decode[KeyGenExpected](expected_raw)!
 	return prompt, expected
 }
 

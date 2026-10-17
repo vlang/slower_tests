@@ -4,7 +4,7 @@
 
 // only byte-aligned messages (len % 8 == 0) are tested
 import encoding.hex
-import json
+import json2
 import os
 import crypto.sha3
 
@@ -48,8 +48,8 @@ fn load_sha3_vectors(name string) !(Sha3Prompt, map[int]Sha3Result) {
 	dir := os.dir(@FILE)
 	prompt_raw := os.read_file(os.join_path(dir, 'testdata', '${name}_prompt.json'))!
 	expected_raw := os.read_file(os.join_path(dir, 'testdata', '${name}_expected.json'))!
-	prompt := json.decode(Sha3Prompt, prompt_raw)!
-	expected := json.decode(Sha3Expected, expected_raw)!
+	prompt := json2.decode[Sha3Prompt](prompt_raw)!
+	expected := json2.decode[Sha3Expected](expected_raw)!
 
 	mut results := map[int]Sha3Result{}
 	for g in expected.test_groups {
